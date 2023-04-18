@@ -29,7 +29,10 @@ async function prismaGenerate() {
 }
 
 (async () => {
-  const response = await prompts({
+  if (process.env.DATABASE_TYPE != undefined ) {
+    const databaseType = process.env.DATABASE_TYPE
+  } else {
+    const response = await prompts({
     type: 'select',
     name: 'value',
     choices: [
@@ -38,9 +41,8 @@ async function prismaGenerate() {
     ],
     message: 'Which database are you using?',
   });
-
-  const databaseType = response.value;
-
+     const databaseType = response.value;
+  }
   console.log(`Database type selected: ${databaseType}`);
 
   // copy prisma files and generate prisma client
