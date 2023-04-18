@@ -31,7 +31,7 @@ async function prismaGenerate() {
 (async () => {
   if (process.env.DATABASE_TYPE != undefined ) {
     console.log(`reading Database type from env  ${process.env.DATABASE_TYPE}`);
-    const databaseType = process.env.DATABASE_TYPE
+    const databaseType = process.env.DATABASE_TYPE;
   } else {
     const response = await prompts({
       type: "select",
