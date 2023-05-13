@@ -4,8 +4,9 @@ const fse = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
 const prompts = require('prompts');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require(path.resolve(process.cwd(), 'node_modules/@prisma/client'));
 const { success, error, inProgress } = require('./common');
+const pkg = require('./package.json');
 
 let prisma;
 let databaseType;
@@ -71,7 +72,7 @@ async function checkV1TablesReady() {
 
     success('Database v1 tables ready for migration.');
   } catch (e) {
-    throw new Error('Database v1 tables are not ready for migration.');
+    throw new Error('Database v1 tables have not been detected.');
   }
 }
 
@@ -86,7 +87,7 @@ async function checkV2Tables() {
     console.log('Adding v2 tables...');
 
     // run v2 prisma migration steps
-    await runSqlFile('/prisma/migrations/01_init/migration.sql');
+    await runSqlFile(`/db/${databaseType}/migrations/01_init/migration.sql`);
     console.log(execSync('npx prisma migrate resolve --applied 01_init').toString());
   }
 }
@@ -103,11 +104,11 @@ async function checkMigrationReady() {
 }
 
 async function migrateData() {
-  const filePath = `/prisma/data-migration-v2.sql`;
+  const filePath = `/db/${databaseType}/data-migration-v2.sql`;
   inProgress('Starting v2 data migration. Please do no cancel this process, it may take a while.');
   await runSqlFile(filePath);
 
-  success('Data migration from V1 to V2 tables completed.');
+  success('Data migration from v1 to v2 tables completed.');
 }
 
 async function dropV1Keys(databaseType) {
@@ -121,6 +122,7 @@ async function dropV1Keys(databaseType) {
         prisma.$executeRaw`ALTER TABLE IF EXISTS session DROP CONSTRAINT IF EXISTS session_pkey CASCADE;`,
         prisma.$executeRaw`ALTER TABLE IF EXISTS website DROP CONSTRAINT IF EXISTS website_pkey CASCADE;`,
         prisma.$executeRaw`ALTER TABLE IF EXISTS event_data DROP CONSTRAINT IF EXISTS event_data_pkey CASCADE;`,
+        prisma.$executeRaw`ALTER TABLE IF EXISTS website DROP CONSTRAINT IF EXISTS website_share_id_key CASCADE;`,
       ]);
     } else {
         await executeRawIgnore('ALTER TABLE session DROP FOREIGN KEY session_website_id_fkey;');
@@ -212,7 +214,7 @@ async function deleteV1TablesPrompt() {
   const response = await prompts({
     type: 'text',
     name: 'value',
-    message: 'Do you want to delete V1 database tables? (Y/N)',
+    message: 'Do you want to delete v1 database tables? (Y/N)',
     validate: value =>
       value.toUpperCase() !== 'Y' && value.toUpperCase() !== 'N' ? `Please enter Y or N.` : true,
   });
@@ -284,12 +286,10 @@ async function runSqlFile(filePath) {
   }
 }
 
-function delay(time) {
-  return new Promise(resolve => setTimeout(resolve, time));
-}
-
 // migration workflow
 (async () => {
+  console.log(`Running v${pkg.version}`);
+
   databaseType = getDatabaseType();
   prisma = new PrismaClient();
 
