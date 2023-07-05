@@ -46,7 +46,7 @@ async function prismaGenerate() {
     
      const databaseType = response.value;
   }
-  console.log(`Database type selected: ${databaseType}`);
+  console.log(`Database type selected: ${databaseType ?? ''}`);
 
   // copy prisma files and generate prisma client
   await copyDbFiles(databaseType);
