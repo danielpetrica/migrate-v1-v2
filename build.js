@@ -33,6 +33,7 @@ async function prismaGenerate() {
     console.log(`reading Database type from env  ${process.env.DATABASE_TYPE}`);
     const databaseType = process.env.DATABASE_TYPE;
   } else {
+    console.log('Env value not present');
     const response = await prompts({
       type: "select",
       name: "value",
@@ -42,6 +43,7 @@ async function prismaGenerate() {
       ],
       message: "Which database are you using?",
     });
+    
      const databaseType = response.value;
   }
   console.log(`Database type selected: ${databaseType}`);
